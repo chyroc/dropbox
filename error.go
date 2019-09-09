@@ -24,4 +24,6 @@ const (
 	ErrUploadFileStartFail  = "upload_start_fail"
 	ErrUploadFileAppendFail = "upload_append_fail"
 	ErrUploadFileFinishFail = "upload_finish_fail"
+	ErrSaveURLFail          = "save_url_fail"
+	ErrGetSaveURLJobFail    = "get_save_url_job_fail"
 )

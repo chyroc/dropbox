@@ -19,18 +19,18 @@ func makeOnlyOnePreSlash(path string) string {
 // null
 // {"error_summary": "incorrect_offset/", "error": {".tag": "incorrect_offset", "correct_offset": 0}}
 // {"error_summary": "lookup_failed/incorrect_offset/", "error": {".tag": "lookup_failed", "lookup_failed": {".tag": "incorrect_offset", "correct_offset": 1252}}}
-func makeDropboxError(bs []byte, msg string) *Error {
+func makeDropboxError(bs []byte, msg string) (map[string]interface{}, *Error) {
 	if string(bs) == "null" {
-		return nil
+		return nil, nil
 	}
 
 	var m = make(map[string]interface{})
 
 	if err := json.Unmarshal(bs, &m); err != nil {
-		return NewError(msg, fmt.Sprintf("decode json fail: %s", err))
+		return nil, NewError(msg, fmt.Sprintf("decode json fail: %s", err))
 	}
 	if _, ok := m["error"]; !ok {
-		return nil
+		return m, nil
 	}
 
 	var errDetail interface{}
@@ -49,7 +49,7 @@ func makeDropboxError(bs []byte, msg string) *Error {
 		continue
 	}
 
-	return NewError(msg, fmt.Sprintf("%s: %v", errKey, errDetail))
+	return nil, NewError(msg, fmt.Sprintf("%s: %v", errKey, errDetail))
 }
 
 func (r *impl) UploadFile(filename string, f io.Reader) (err *Error) {
@@ -118,19 +118,17 @@ func (r *impl) startSession(f io.Reader, length int) (session *uploadSession, er
 		"Content-Type":    "application/octet-stream",
 	}
 
-	var res struct {
-		SessionID string `json:"session_id"`
-	}
-	_, bs, err := httpRequest(url, http.MethodPost, f, headers, &res)
+	_, bs, err := httpRequest(url, http.MethodPost, f, headers, nil)
 	if err != nil {
 		return nil, NewError(ErrUploadFileStartFail, err.Message)
 	}
 
-	if err := makeDropboxError(bs, ErrUploadFileStartFail); err != nil {
+	m, err := makeDropboxError(bs, ErrUploadFileStartFail)
+	if err != nil {
 		return nil, err
 	}
 
-	return &uploadSession{sessionID: res.SessionID, offset: length, token: r.token}, nil
+	return &uploadSession{sessionID: m["session_id"].(string), offset: length, token: r.token}, nil
 }
 
 func (s *uploadSession) appendSession(f io.Reader, length int) (err *Error) {
@@ -147,7 +145,8 @@ func (s *uploadSession) appendSession(f io.Reader, length int) (err *Error) {
 		return NewError(ErrUploadFileAppendFail, err.Message)
 	}
 
-	return makeDropboxError(bs, ErrUploadFileAppendFail)
+	_, err = makeDropboxError(bs, ErrUploadFileAppendFail)
+	return err
 }
 
 func (s *uploadSession) finishSession(filename string) (err *Error) {
@@ -164,5 +163,6 @@ func (s *uploadSession) finishSession(filename string) (err *Error) {
 		return NewError(ErrUploadFileFinishFail, err.Message)
 	}
 
-	return makeDropboxError(bs, ErrUploadFileFinishFail)
+	_, err = makeDropboxError(bs, ErrUploadFileFinishFail)
+	return err
 }
