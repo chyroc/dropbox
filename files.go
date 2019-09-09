@@ -97,7 +97,7 @@ func (r *impl) uploadFile(filename string, f io.Reader) (err *Error) {
 		"Content-Type":    "application/octet-stream",
 	}
 
-	if _, bs, err := httpRequest(url, http.MethodPost, f, headers, nil); err != nil {
+	if _, bs, err := httpRequest(http.MethodPost, url, f, headers, nil); err != nil {
 		return err
 	} else {
 		fmt.Println(string(bs))
@@ -121,7 +121,7 @@ func (r *impl) startSession(f io.Reader, length int) (session *uploadSession, er
 		"Content-Type":    "application/octet-stream",
 	}
 
-	_, bs, err := httpRequest(url, http.MethodPost, f, headers, nil)
+	_, bs, err := httpRequest(http.MethodPost, url, f, headers, nil)
 	if err != nil {
 		return nil, NewError(ErrUploadFileStartFail, err.Message)
 	}
@@ -143,7 +143,7 @@ func (s *uploadSession) appendSession(f io.Reader, length int) (err *Error) {
 		"Content-Type":    "application/octet-stream",
 	}
 
-	_, bs, err := httpRequest(url, http.MethodPost, f, headers, nil);
+	_, bs, err := httpRequest(http.MethodPost, url, f, headers, nil);
 	if err != nil {
 		return NewError(ErrUploadFileAppendFail, err.Message)
 	}
@@ -161,7 +161,7 @@ func (s *uploadSession) finishSession(filename string) (err *Error) {
 		"Content-Type":    "application/octet-stream",
 	}
 
-	_, bs, err := httpRequest(url, http.MethodPost, nil, headers, nil)
+	_, bs, err := httpRequest(http.MethodPost, url, nil, headers, nil)
 	if err != nil {
 		return NewError(ErrUploadFileFinishFail, err.Message)
 	}
