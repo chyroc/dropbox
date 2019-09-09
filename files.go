@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -62,6 +63,7 @@ func (r *impl) UploadFile(filename string, f io.Reader) (err *Error) {
 	}
 	if readLen < MaxSingleUploadFileSize {
 		// 这里小于 150 M，那么就直接调用 upload 接口就行
+		log.Printf("[dropbox][UploadFile] use upload api\n")
 		return r.uploadFile(filename, bytes.NewReader(buf[:readLen]))
 	}
 
@@ -79,6 +81,7 @@ func (r *impl) UploadFile(filename string, f io.Reader) (err *Error) {
 			return session.finishSession(filename)
 		}
 
+		log.Printf("[dropbox][UploadFile] use append api\n")
 		if err = session.appendSession(bytes.NewReader(buf[:readLen]), readLen); err != nil {
 			return err
 		}
