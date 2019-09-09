@@ -37,13 +37,22 @@ func makeDropboxError(bs []byte, msg string) (map[string]interface{}, *Error) {
 	var errDetail interface{}
 	var errKey string
 
+	var getErrDetail = func(er map[string]interface{}, key string) string {
+		if _, ok := er[".tag"]; ok {
+			delete(er, ".tag")
+		}
+		b, _ := json.Marshal(er)
+		return string(b)
+	}
+
 	summary := m["error_summary"].(string)
 	summarys := strings.Split(summary, "/")
 	errMap := m["error"].(map[string]interface{})
 	for i := 0; i < len(summarys)-1; i++ {
 		if i == len(summarys)-2 {
-			errDetail = errMap[summarys[i]]
+			errDetail = getErrDetail(errMap, summarys[i])
 			errKey = summarys[i]
+			break
 		}
 
 		errMap = errMap[summarys[i]].(map[string]interface{})
@@ -54,12 +63,14 @@ func makeDropboxError(bs []byte, msg string) (map[string]interface{}, *Error) {
 }
 
 func (r *impl) UploadFile(filename string, f io.Reader) (err *Error) {
+	defer printTrace()
+
 	filename = makeOnlyOnePreSlash(filename)
 
 	var buf = make([]byte, MaxSingleUploadFileSize) // 150M
 	readLen, err2 := f.Read(buf)
-	if err2 != nil {
-		return NewError(ErrReadFileFail, err.Error())
+	if err2 != nil && err2 != io.EOF {
+		return NewError(ErrReadFileFail, err2.Error())
 	}
 	if readLen < MaxSingleUploadFileSize {
 		// 这里小于 150 M，那么就直接调用 upload 接口就行
@@ -74,8 +85,8 @@ func (r *impl) UploadFile(filename string, f io.Reader) (err *Error) {
 	}
 	for {
 		readLen, err2 := f.Read(buf)
-		if err2 != nil {
-			return NewError(ErrReadFileFail, err.Error())
+		if err2 != nil && err2 != io.EOF {
+			return NewError(ErrReadFileFail, err2.Error())
 		}
 		if readLen == 0 {
 			return session.finishSession(filename)
@@ -149,7 +160,11 @@ func (s *uploadSession) appendSession(f io.Reader, length int) (err *Error) {
 	}
 
 	_, err = makeDropboxError(bs, ErrUploadFileAppendFail)
-	return err
+	if err != nil {
+		return err
+	}
+	s.offset += length
+	return nil
 }
 
 func (s *uploadSession) finishSession(filename string) (err *Error) {

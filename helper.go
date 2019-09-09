@@ -6,6 +6,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"runtime"
+	"runtime/debug"
 )
 
 func httpRequest(method, url string, body io.Reader, headers map[string]string, res interface{}) (int, []byte, *Error) {
@@ -36,4 +38,12 @@ func httpRequest(method, url string, body io.Reader, headers map[string]string, 
 	}
 
 	return resp.StatusCode, bs, nil
+}
+
+func printTrace() {
+	if err := recover(); err != nil {
+		pc, _, _, _ := runtime.Caller(3)
+		f := runtime.FuncForPC(pc)
+		fmt.Printf("functipn=%v\npanic:%v\nstack info:%v", f.Name(), err, string(debug.Stack()))
+	}
 }
