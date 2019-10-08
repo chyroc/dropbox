@@ -4,7 +4,7 @@ import "io"
 
 type Dropbox interface {
 	// file
-	UploadFile(filename string, f io.Reader) (err *Error)
+	UploadFile(filename string, f io.Reader, overwrite bool) (err *Error)
 	SaveURL(filename, url string) (jobID string, err *Error)
 	CheckSaveURLJob(jobID string) (status string, err *Error)
 }

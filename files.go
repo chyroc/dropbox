@@ -62,7 +62,7 @@ func makeDropboxError(bs []byte, msg string) (map[string]interface{}, *Error) {
 	return nil, NewError(msg, fmt.Sprintf("%s: %v", errKey, errDetail))
 }
 
-func (r *impl) UploadFile(filename string, f io.Reader) (err *Error) {
+func (r *impl) UploadFile(filename string, f io.Reader, overwrite bool) (err *Error) {
 	defer printTrace()
 
 	filename = makeOnlyOnePreSlash(filename)
@@ -74,11 +74,12 @@ func (r *impl) UploadFile(filename string, f io.Reader) (err *Error) {
 	}
 	if readLen < MaxSingleUploadFileSize {
 		// 这里小于 150 M，那么就直接调用 upload 接口就行
-		log.Printf("[dropbox][UploadFile] use upload api\n")
-		return r.uploadFile(filename, bytes.NewReader(buf[:readLen]))
+		log.Printf("[dropbox][UploadFile] small file\n")
+		return r.uploadFile(filename, bytes.NewReader(buf[:readLen]), overwrite)
 	}
 
 	// 否则分片
+	log.Printf("[dropbox][UploadFile] big file\n")
 	session, err := r.startSession(bytes.NewReader(buf[:readLen]), readLen)
 	if err != nil {
 		return err
@@ -89,29 +90,33 @@ func (r *impl) UploadFile(filename string, f io.Reader) (err *Error) {
 			return NewError(ErrReadFileFail, err2.Error())
 		}
 		if readLen == 0 {
-			return session.finishSession(filename)
+			return session.finishSession(filename, overwrite)
 		}
 
 		log.Printf("[dropbox][UploadFile] use append api\n")
-		if err = session.appendSession(bytes.NewReader(buf[:readLen]), readLen); err != nil {
+		if err := session.appendSession(bytes.NewReader(buf[:readLen]), readLen); err != nil {
 			return err
 		}
 	}
 }
 
-func (r *impl) uploadFile(filename string, f io.Reader) (err *Error) {
+func (r *impl) uploadFile(filename string, f io.Reader, overwrite bool) (err *Error) {
 	url := "https://content.dropboxapi.com/2/files/upload"
 
+	mode := ""
+	if overwrite {
+		mode = "overwrite"
+	} else {
+		mode = "add"
+	}
 	headers := map[string]string{
 		"Authorization":   "Bearer " + r.token,
-		"Dropbox-API-Arg": fmt.Sprintf(`{"path": %q,"mode": "add","autorename": true,"mute": false,"strict_conflict": false}`, filename),
+		"Dropbox-API-Arg": fmt.Sprintf(`{"path": %q,"mode": %q,"autorename": true,"mute": false,"strict_conflict": false}`, filename, mode),
 		"Content-Type":    "application/octet-stream",
 	}
 
-	if _, bs, err := httpRequest(http.MethodPost, url, f, headers, nil); err != nil {
+	if _, _, err := httpRequest(http.MethodPost, url, f, headers, nil); err != nil {
 		return err
-	} else {
-		fmt.Println(string(bs))
 	}
 
 	return nil
@@ -167,12 +172,18 @@ func (s *uploadSession) appendSession(f io.Reader, length int) (err *Error) {
 	return nil
 }
 
-func (s *uploadSession) finishSession(filename string) (err *Error) {
+func (s *uploadSession) finishSession(filename string, overwrite bool) (err *Error) {
 	url := "https://content.dropboxapi.com/2/files/upload_session/finish"
 
+	mode := ""
+	if overwrite {
+		mode = "overwrite"
+	} else {
+		mode = "add"
+	}
 	headers := map[string]string{
 		"Authorization":   "Bearer " + s.token,
-		"Dropbox-API-Arg": fmt.Sprintf(`{"cursor":{"session_id":%q,"offset":%d},"commit":{"path":%q,"mode":"add","autorename":true,"mute":false,"strict_conflict":false}}`, s.sessionID, s.offset, filename),
+		"Dropbox-API-Arg": fmt.Sprintf(`{"cursor":{"session_id":%q,"offset":%d},"commit":{"path":%q,"mode":%q,"autorename":true,"mute":false,"strict_conflict":false}}`, s.sessionID, s.offset, filename, mode),
 		"Content-Type":    "application/octet-stream",
 	}
 
