@@ -1,6 +1,7 @@
 package dropbox
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -41,5 +42,10 @@ func (r *impl) CheckSaveURLJob(jobID string) (status string, err *Error) {
 		return "", NewError(ErrGetSaveURLJobFail, err.Message)
 	}
 
-	return string(bs), nil
+	var res = make(map[string]interface{})
+	if err := json.Unmarshal(bs, &res); err != nil {
+		return "", NewError(ErrGetSaveURLJobFail, err.Error())
+	}
+
+	return res[".tag"].(string), nil
 }
