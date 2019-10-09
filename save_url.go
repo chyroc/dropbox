@@ -15,7 +15,7 @@ func (r *impl) SaveURL(filename, fileURL string) (jobID string, err *Error) {
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", r.token),
-		"Content-Type":  "application/json",
+		"Content-Type":  "application/json; charset=utf-8",
 	}
 	_, bs, err := httpRequest(http.MethodPost, url, payload, headers, nil)
 	if err != nil {
@@ -35,7 +35,7 @@ func (r *impl) CheckSaveURLJob(jobID string) (status string, err *Error) {
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", r.token),
-		"Content-Type":  "application/json",
+		"Content-Type":  "application/json; charset=utf-8",
 	}
 	_, bs, err := httpRequest(http.MethodPost, url, strings.NewReader(fmt.Sprintf(`{"async_job_id":%q}`, jobID)), headers, nil)
 	if err != nil {

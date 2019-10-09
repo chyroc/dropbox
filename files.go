@@ -109,11 +109,13 @@ func (r *impl) uploadFile(filename string, f io.Reader, overwrite bool) (err *Er
 	} else {
 		mode = "add"
 	}
+
 	headers := map[string]string{
 		"Authorization":   "Bearer " + r.token,
-		"Dropbox-API-Arg": fmt.Sprintf(`{"path": %q,"mode": %q,"autorename": true,"mute": false,"strict_conflict": false}`, filename, mode),
+		"Dropbox-API-Arg": fmt.Sprintf(`{"path": %+q,"mode": %+q,"autorename": true,"mute": false,"strict_conflict": false}`, filename, mode),
 		"Content-Type":    "application/octet-stream",
 	}
+	fmt.Println("headers", headers)
 
 	if _, _, err := httpRequest(http.MethodPost, url, f, headers, nil); err != nil {
 		return err
@@ -155,7 +157,7 @@ func (s *uploadSession) appendSession(f io.Reader, length int) (err *Error) {
 
 	headers := map[string]string{
 		"Authorization":   "Bearer " + s.token,
-		"Dropbox-API-Arg": fmt.Sprintf(`{"cursor":{"session_id":%q,"offset":%d},"close":false}`, s.sessionID, s.offset),
+		"Dropbox-API-Arg": fmt.Sprintf(`{"cursor":{"session_id":%+q,"offset":%d},"close":false}`, s.sessionID, s.offset),
 		"Content-Type":    "application/octet-stream",
 	}
 
@@ -183,7 +185,7 @@ func (s *uploadSession) finishSession(filename string, overwrite bool) (err *Err
 	}
 	headers := map[string]string{
 		"Authorization":   "Bearer " + s.token,
-		"Dropbox-API-Arg": fmt.Sprintf(`{"cursor":{"session_id":%q,"offset":%d},"commit":{"path":%q,"mode":%q,"autorename":true,"mute":false,"strict_conflict":false}}`, s.sessionID, s.offset, filename, mode),
+		"Dropbox-API-Arg": fmt.Sprintf(`{"cursor":{"session_id":%+q,"offset":%d},"commit":{"path":%+q,"mode":%+q,"autorename":true,"mute":false,"strict_conflict":false}}`, s.sessionID, s.offset, filename, mode),
 		"Content-Type":    "application/octet-stream",
 	}
 

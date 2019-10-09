@@ -36,6 +36,9 @@ func httpRequest(method, url string, body io.Reader, headers map[string]string, 
 			return 0, bs, NewError(ErrRequestFail, err.Error())
 		}
 	}
+	fmt.Println("httpRequest.url", url)
+	fmt.Println("httpRequest.headers", headers)
+	fmt.Println("httpRequest.res", string(bs))
 
 	return resp.StatusCode, bs, nil
 }
