@@ -161,7 +161,7 @@ func (s *uploadSession) appendSession(f io.Reader, length int) (err *Error) {
 		"Content-Type":    "application/octet-stream",
 	}
 
-	_, bs, err := httpRequest(http.MethodPost, url, f, headers, nil);
+	_, bs, err := httpRequest(http.MethodPost, url, f, headers, nil)
 	if err != nil {
 		return NewError(ErrUploadFileAppendFail, err.Message)
 	}
