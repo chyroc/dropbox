@@ -6,6 +6,7 @@ type Dropbox interface {
 	// file
 	FileMetadata(filename string) (*Metadata, error)
 	FileDownload(filename string) (*Metadata, []byte, error)
+	FileDelete(filename string) (*Metadata, error)
 	UploadFile(filename string, f io.Reader, overwrite bool) (err *Error)
 	SaveURL(filename, url string) (jobID string, err *Error)
 	CheckSaveURLJob(jobID string) (status string, err *Error)
