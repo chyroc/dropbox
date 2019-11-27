@@ -12,7 +12,7 @@ func (r *impl) FileDownload(filename string) (*Metadata, []byte, error) {
 
 	headers := map[string]string{
 		"Authorization":   "Bearer " + r.token,
-		"Dropbox-API-Arg": fmt.Sprintf(`{"path":%q}`, filename),
+		"Dropbox-API-Arg": fmt.Sprintf(`{"path":%+q}`, filename),
 	}
 	resp, bs, err := httpRequest(http.MethodPost, url, nil, headers, nil)
 	if err != nil {
@@ -22,7 +22,7 @@ func (r *impl) FileDownload(filename string) (*Metadata, []byte, error) {
 	if resp.Header.Get("Content-Type") == "application/octet-stream" {
 		var res = new(Metadata)
 		if err := json.Unmarshal([]byte(resp.Header.Get("dropbox-api-result")), res); err != nil {
-			return nil, nil, fmt.Errorf("[dropbox][download] 解析结果出错: %q / %w", bs, err)
+			return nil, nil, fmt.Errorf("[dropbox][download] 解析结果出错: %+q / %w", bs, err)
 		}
 		return res, bs, nil
 	}

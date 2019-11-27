@@ -31,7 +31,7 @@ func (r *impl) FileMetadata(filename string) (*Metadata, error) {
 		"Authorization": "Bearer " + r.token,
 		"Content-Type":  "application/json",
 	}
-	f := strings.NewReader(fmt.Sprintf(`{"path":%q,"include_media_info":true}`, filename))
+	f := strings.NewReader(fmt.Sprintf(`{"path":%+q,"include_media_info":true}`, filename))
 
 	_, bs, err := httpRequest(http.MethodPost, url, f, headers, nil)
 	if err != nil {
@@ -47,7 +47,7 @@ func (r *impl) FileMetadata(filename string) (*Metadata, error) {
 
 	var res = new(Metadata)
 	if err := json.Unmarshal(bs, res); err != nil {
-		return nil, fmt.Errorf("[dropbox][get metadata] 解析结果出错: %q / %w", bs, err)
+		return nil, fmt.Errorf("[dropbox][get metadata] 解析结果出错: %+q / %w", bs, err)
 	}
 	return res, nil
 }

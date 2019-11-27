@@ -14,7 +14,7 @@ func (r *impl) FileDelete(filename string) (*Metadata, error) {
 		"Authorization": "Bearer " + r.token,
 		"Content-Type":  "application/json",
 	}
-	f := strings.NewReader(fmt.Sprintf(`{"path":%q}`, filename))
+	f := strings.NewReader(fmt.Sprintf(`{"path":%+q}`, filename))
 	_, bs, err := httpRequest(http.MethodPost, url, f, headers, nil)
 	if err != nil {
 		return nil, fmt.Errorf("[dropbox][delete] failed: %w", err)
@@ -30,7 +30,7 @@ func (r *impl) FileDelete(filename string) (*Metadata, error) {
 		Metadata *Metadata `json:"metadata"`
 	}
 	if err := json.Unmarshal(bs, &res); err != nil {
-		return nil, fmt.Errorf("[dropbox][get metadata] 解析结果出错: %q / %w", bs, err)
+		return nil, fmt.Errorf("[dropbox][get metadata] 解析结果出错: %+q / %w", bs, err)
 	}
 
 	return res.Metadata, nil
