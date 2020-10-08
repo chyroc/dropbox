@@ -1,7 +1,6 @@
 package dropbox
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -41,8 +40,16 @@ type SymlinkInfo struct {
 type ExportInfo struct {
 	ExportAs string `json:"export_as"`
 }
+
+type Tag string
+
+const (
+	TagFile   Tag = "file"
+	TagFolder Tag = "folder"
+)
+
 type Metadata struct {
-	Tag                      string          `json:".tag"`
+	Tag                      Tag             `json:".tag"`
 	Name                     string          `json:"name"`
 	ID                       string          `json:"id"`
 	ClientModified           time.Time       `json:"client_modified"`
@@ -63,28 +70,12 @@ type Metadata struct {
 
 func (r *impl) FileMetadata(filename string) (*Metadata, error) {
 	url := "https://api.dropboxapi.com/2/files/get_metadata"
+	typ := "file_metadata"
+	req := r.request(http.MethodPost, url).WithHeader("Content-Type", "application/json").WithBody(strings.NewReader(fmt.Sprintf(`{"path":%+q,"include_media_info":true}`, filename)))
+	resp := new(Metadata)
 
-	headers := map[string]string{
-		"Authorization": "Bearer " + r.token,
-		"Content-Type":  "application/json",
-	}
-	f := strings.NewReader(fmt.Sprintf(`{"path":%+q,"include_media_info":true}`, filename))
-
-	_, bs, err := httpRequest(http.MethodPost, url, f, headers, nil)
-	if err != nil {
-		return nil, fmt.Errorf("[dropbox][get metadata] failed: %w", err)
-	}
-
-	if _, err = makeDropboxError(bs, "file_metadata"); err != nil {
-		if strings.Contains(err.Error(), "not_found") {
-			return nil, ErrNotFound
-		}
+	if err := unmarshalResponse(typ, req, resp); err != nil {
 		return nil, err
 	}
-
-	var res = new(Metadata)
-	if err := json.Unmarshal(bs, res); err != nil {
-		return nil, fmt.Errorf("[dropbox][get metadata] 解析结果出错: %+q / %w", bs, err)
-	}
-	return res, nil
+	return resp, nil
 }

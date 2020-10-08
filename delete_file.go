@@ -7,8 +7,9 @@ import (
 	"strings"
 )
 
-func (r *impl) FileDelete(filename string) (*Metadata, error) {
+func (r *impl) DeleteFile(filename string) (*Metadata, error) {
 	url := "https://api.dropboxapi.com/2/files/delete_v2"
+	typ := "delete_file"
 
 	headers := map[string]string{
 		"Authorization": "Bearer " + r.token,
@@ -17,7 +18,7 @@ func (r *impl) FileDelete(filename string) (*Metadata, error) {
 	f := strings.NewReader(fmt.Sprintf(`{"path":%+q}`, filename))
 	_, bs, err := httpRequest(http.MethodPost, url, f, headers, nil)
 	if err != nil {
-		return nil, fmt.Errorf("[dropbox][delete] failed: %w", err)
+		return nil, err
 	}
 
 	if _, err = makeDropboxError(bs, "file_delete"); err != nil {
@@ -30,7 +31,7 @@ func (r *impl) FileDelete(filename string) (*Metadata, error) {
 		Metadata *Metadata `json:"metadata"`
 	}
 	if err := json.Unmarshal(bs, &res); err != nil {
-		return nil, fmt.Errorf("[dropbox][get metadata] 解析结果出错: %+q / %w", bs, err)
+		return nil, NewError(typ, string(bs))
 	}
 
 	return res.Metadata, nil
