@@ -72,6 +72,7 @@ func (r *impl) DownloadFile(filename, dist string) (*Metadata, error) {
 			if err := moveFile(f.Name(), dist); err != nil {
 				return nil, WrapError(typ, err)
 			}
+			_ = os.Chtimes(dist, meta.ClientModified, meta.ClientModified)
 		}
 
 		return meta, nil
