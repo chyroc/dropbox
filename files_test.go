@@ -1,9 +1,10 @@
 package dropbox_test
 
 import (
-	"github.com/chyroc/dropbox"
 	"strings"
 	"testing"
+
+	"github.com/chyroc/dropbox"
 )
 
 func TestImpl_UploadFile(t *testing.T) {

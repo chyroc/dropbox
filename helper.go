@@ -70,7 +70,7 @@ func makeDropboxError(bs []byte, msg string) (map[string]interface{}, *Error) {
 	var m = make(map[string]interface{})
 
 	if err := json.Unmarshal(bs, &m); err != nil {
-		return nil, NewError(msg, fmt.Sprintf("decode json fail: %s", err))
+		return nil, NewError(msg, string(bs))
 	}
 	if _, ok := m["error"]; !ok {
 		return m, nil

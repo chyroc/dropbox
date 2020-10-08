@@ -11,17 +11,43 @@ import (
 
 var ErrFileNotFound = errors.New("file not found")
 
+type SharingInfo struct {
+	ReadOnly             bool   `json:"read_only"`
+	ParentSharedFolderID string `json:"parent_shared_folder_id"`
+	ModifiedBy           string `json:"modified_by"`
+}
+
+type FileLockInfo struct {
+	IsLockholder   bool      `json:"is_lockholder"`
+	LockholderName string    `json:"lockholder_name"`
+	Created        time.Time `json:"created"`
+}
+
+type Field struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+type PropertyGroup struct {
+	TemplateID string  `json:"template_id"`
+	Fields     []Field `json:"fields"`
+}
+
 type Metadata struct {
-	Name           string    `json:"name"`
-	PathLower      string    `json:"path_lower"`
-	PathDisplay    string    `json:"path_display"`
-	ID             string    `json:"id"`
-	ClientModified time.Time `json:"client_modified"`
-	ServerModified time.Time `json:"server_modified"`
-	Rev            string    `json:"rev"`
-	Size           int       `json:"size"`
-	IsDownloadable bool      `json:"is_downloadable"`
-	ContentHash    string    `json:"content_hash"`
+	Name                     string          `json:"name"`
+	ID                       string          `json:"id"`
+	ClientModified           time.Time       `json:"client_modified"`
+	ServerModified           time.Time       `json:"server_modified"`
+	Rev                      string          `json:"rev"`
+	Size                     int             `json:"size"`
+	PathLower                string          `json:"path_lower"`
+	PathDisplay              string          `json:"path_display"`
+	SharingInfo              SharingInfo     `json:"sharing_info"`
+	IsDownloadable           bool            `json:"is_downloadable"`
+	PropertyGroups           []PropertyGroup `json:"property_groups"`
+	HasExplicitSharedMembers bool            `json:"has_explicit_shared_members"`
+	ContentHash              string          `json:"content_hash"`
+	FileLockInfo             FileLockInfo    `json:"file_lock_info"`
 }
 
 func (r *impl) FileMetadata(filename string) (*Metadata, error) {

@@ -9,7 +9,7 @@ import (
 )
 
 func (r *impl) UploadFile(filename string, f io.Reader, overwrite bool) (err *Error) {
-	//defer printTrace()
+	// defer printTrace()
 
 	filename = makeOnlyOnePreSlash(filename)
 

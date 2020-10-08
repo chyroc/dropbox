@@ -12,7 +12,7 @@ func (r *impl) FileDownload(filename string) (*Metadata, []byte, error) {
 
 	headers := map[string]string{
 		"Authorization":   "Bearer " + r.token,
-		"Dropbox-API-Arg": fmt.Sprintf(`{"path":%+q}`, filename),
+		"Dropbox-API-Arg": fmt.Sprintf(`{"path":%+q}`, filename), // + -> unicode
 	}
 	resp, bs, err := httpRequest(http.MethodPost, url, nil, headers, nil)
 	if err != nil {
