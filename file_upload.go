@@ -16,7 +16,7 @@ func (r *impl) UploadFile(filename string, f io.Reader, overwrite bool) (err *Er
 	var buf = make([]byte, MaxSingleUploadFileSize) // 150M
 	readLen, err2 := f.Read(buf)
 	if err2 != nil && err2 != io.EOF {
-		return NewError(ErrReadFileFail, err2.Error())
+		return NewError("upload_file", err2.Error())
 	}
 	if readLen < MaxSingleUploadFileSize {
 		// 这里小于 150 M，那么就直接调用 upload 接口就行
@@ -33,7 +33,7 @@ func (r *impl) UploadFile(filename string, f io.Reader, overwrite bool) (err *Er
 	for {
 		readLen, err2 := f.Read(buf)
 		if err2 != nil && err2 != io.EOF {
-			return NewError(ErrReadFileFail, err2.Error())
+			return NewError("upload_file", err2.Error())
 		}
 		if readLen == 0 {
 			return session.finishSession(filename, overwrite)
@@ -87,10 +87,10 @@ func (r *impl) startSession(f io.Reader, length int) (session *uploadSession, er
 
 	_, bs, err := httpRequest(http.MethodPost, url, f, headers, nil)
 	if err != nil {
-		return nil, NewError(ErrUploadFileStartFail, err.Message)
+		return nil, NewError("upload_file_start", err.Message)
 	}
 
-	m, err := makeDropboxError(bs, ErrUploadFileStartFail)
+	m, err := makeDropboxError(bs, "upload_file_start")
 	if err != nil {
 		return nil, err
 	}
@@ -109,10 +109,10 @@ func (s *uploadSession) appendSession(f io.Reader, length int) (err *Error) {
 
 	_, bs, err := httpRequest(http.MethodPost, url, f, headers, nil)
 	if err != nil {
-		return NewError(ErrUploadFileAppendFail, err.Message)
+		return NewError("upload_file_append", err.Message)
 	}
 
-	_, err = makeDropboxError(bs, ErrUploadFileAppendFail)
+	_, err = makeDropboxError(bs, "upload_file_append")
 	if err != nil {
 		return err
 	}
@@ -137,9 +137,9 @@ func (s *uploadSession) finishSession(filename string, overwrite bool) (err *Err
 
 	_, bs, err := httpRequest(http.MethodPost, url, nil, headers, nil)
 	if err != nil {
-		return NewError(ErrUploadFileFinishFail, err.Message)
+		return NewError("upload_file_finish", err.Message)
 	}
 
-	_, err = makeDropboxError(bs, ErrUploadFileFinishFail)
+	_, err = makeDropboxError(bs, "upload_file_finish")
 	return err
 }

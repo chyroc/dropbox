@@ -27,9 +27,9 @@ func (r *impl) FileDownload(filename string) (*Metadata, []byte, error) {
 		return res, bs, nil
 	}
 
-	if _, err = makeDropboxError(bs, "[dropbox][download]"); err != nil {
+	if _, err = makeDropboxError(bs, "file_download"); err != nil {
 		if strings.Contains(err.Error(), "not_found") {
-			return nil, nil, ErrFileNotFound
+			return nil, nil, ErrNotFound
 		}
 		return nil, nil, err
 	}

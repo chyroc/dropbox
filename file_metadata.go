@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-var ErrFileNotFound = errors.New("file not found")
+var ErrNotFound = errors.New("not_found")
 
 type SharingInfo struct {
 	ReadOnly             bool   `json:"read_only"`
@@ -18,9 +18,10 @@ type SharingInfo struct {
 }
 
 type FileLockInfo struct {
-	IsLockholder   bool      `json:"is_lockholder"`
-	LockholderName string    `json:"lockholder_name"`
-	Created        time.Time `json:"created"`
+	IsLockHolder        bool      `json:"is_lockholder"`
+	LockHolderName      string    `json:"lockholder_name"`
+	LockHolderAccountID string    `json:"lockholder_account_id"`
+	Created             time.Time `json:"created"`
 }
 
 type Field struct {
@@ -33,7 +34,15 @@ type PropertyGroup struct {
 	Fields     []Field `json:"fields"`
 }
 
+type SymlinkInfo struct {
+	Target string `json:"target"`
+}
+
+type ExportInfo struct {
+	ExportAs string `json:"export_as"`
+}
 type Metadata struct {
+	Tag                      string          `json:".tag"`
 	Name                     string          `json:"name"`
 	ID                       string          `json:"id"`
 	ClientModified           time.Time       `json:"client_modified"`
@@ -42,8 +51,10 @@ type Metadata struct {
 	Size                     int             `json:"size"`
 	PathLower                string          `json:"path_lower"`
 	PathDisplay              string          `json:"path_display"`
+	SymlinkInfo              SymlinkInfo     `json:"symlink_info"`
 	SharingInfo              SharingInfo     `json:"sharing_info"`
 	IsDownloadable           bool            `json:"is_downloadable"`
+	ExportInfo               ExportInfo      `json:"export_info"`
 	PropertyGroups           []PropertyGroup `json:"property_groups"`
 	HasExplicitSharedMembers bool            `json:"has_explicit_shared_members"`
 	ContentHash              string          `json:"content_hash"`
@@ -64,9 +75,9 @@ func (r *impl) FileMetadata(filename string) (*Metadata, error) {
 		return nil, fmt.Errorf("[dropbox][get metadata] failed: %w", err)
 	}
 
-	if _, err = makeDropboxError(bs, "[dropbox][get metadata]"); err != nil {
+	if _, err = makeDropboxError(bs, "file_metadata"); err != nil {
 		if strings.Contains(err.Error(), "not_found") {
-			return nil, ErrFileNotFound
+			return nil, ErrNotFound
 		}
 		return nil, err
 	}

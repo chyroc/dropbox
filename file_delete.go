@@ -20,9 +20,9 @@ func (r *impl) FileDelete(filename string) (*Metadata, error) {
 		return nil, fmt.Errorf("[dropbox][delete] failed: %w", err)
 	}
 
-	if _, err = makeDropboxError(bs, "[dropbox][delete]"); err != nil {
+	if _, err = makeDropboxError(bs, "file_delete"); err != nil {
 		if strings.Contains(err.Error(), "not_found") {
-			return nil, ErrFileNotFound
+			return nil, ErrNotFound
 		}
 		return nil, err
 	}

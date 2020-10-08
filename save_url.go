@@ -19,10 +19,10 @@ func (r *impl) SaveURL(filename, fileURL string) (jobID string, err *Error) {
 	}
 	_, bs, err := httpRequest(http.MethodPost, url, payload, headers, nil)
 	if err != nil {
-		return "", NewError(ErrSaveURLFail, err.Message)
+		return "", NewError("save_url", err.Message)
 	}
 
-	m, err := makeDropboxError(bs, ErrSaveURLFail)
+	m, err := makeDropboxError(bs, "save_url")
 	if err != nil {
 		return "", err
 	}
@@ -39,12 +39,12 @@ func (r *impl) CheckSaveURLJob(jobID string) (status string, err *Error) {
 	}
 	_, bs, err := httpRequest(http.MethodPost, url, strings.NewReader(fmt.Sprintf(`{"async_job_id":%+q}`, jobID)), headers, nil)
 	if err != nil {
-		return "", NewError(ErrGetSaveURLJobFail, err.Message)
+		return "", NewError("check_save_url_job", err.Message)
 	}
 
 	var res = make(map[string]interface{})
 	if err := json.Unmarshal(bs, &res); err != nil {
-		return "", NewError(ErrGetSaveURLJobFail, err.Error())
+		return "", NewError("check_save_url_job", err.Error())
 	}
 
 	return res[".tag"].(string), nil

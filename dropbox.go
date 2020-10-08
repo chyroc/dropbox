@@ -10,6 +10,9 @@ type Dropbox interface {
 	UploadFile(filename string, f io.Reader, overwrite bool) (err *Error)
 	SaveURL(filename, url string) (jobID string, err *Error)
 	CheckSaveURLJob(jobID string) (status string, err *Error)
+
+	// files
+	ListFolder(request RequestListFolder) (*ResponseListFolder, error)
 }
 
 type impl struct {
