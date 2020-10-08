@@ -5,13 +5,14 @@ import "io"
 type Dropbox interface {
 	// file
 	FileMetadata(filename string) (*Metadata, error)
-	DownloadFile(filename string) (*Metadata, []byte, error)
+	GetFile(filename string) (*Metadata, []byte, error)
+	DownloadFile(filename string, dist string) (*Metadata, error)
 	DeleteFile(filename string) (*Metadata, error)
-	UploadFile(filename string, f io.Reader, overwrite bool) (err *Error)
+	UploadFile(filename string, f io.Reader, overwrite bool) error
 
 	// save url job
-	SaveURL(filename, url string) (jobID string, err *Error)
-	CheckSaveURLJob(jobID string) (status string, err *Error)
+	SaveURL(filename, url string) (jobID string, err error)
+	CheckSaveURLJob(jobID string) (status string, err error)
 
 	// list
 	ListFolder(request RequestListFolder) (*ResponseListFolder, error)

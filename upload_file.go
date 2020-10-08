@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func (r *impl) UploadFile(filename string, f io.Reader, overwrite bool) (err *Error) {
+func (r *impl) UploadFile(filename string, f io.Reader, overwrite bool) error {
 	// defer printTrace()
 
 	filename = makeOnlyOnePreSlash(filename)
@@ -46,8 +46,9 @@ func (r *impl) UploadFile(filename string, f io.Reader, overwrite bool) (err *Er
 	}
 }
 
-func (r *impl) uploadFile(filename string, f io.Reader, overwrite bool) (err *Error) {
+func (r *impl) uploadFile(filename string, f io.Reader, overwrite bool) (err error) {
 	url := "https://content.dropboxapi.com/2/files/upload"
+	typ := "upload_file"
 
 	mode := ""
 	if overwrite {
@@ -57,89 +58,75 @@ func (r *impl) uploadFile(filename string, f io.Reader, overwrite bool) (err *Er
 	}
 
 	headers := map[string]string{
-		"Authorization":   "Bearer " + r.token,
 		"Dropbox-API-Arg": fmt.Sprintf(`{"path": %+q,"mode": %+q,"autorename": true,"mute": false,"strict_conflict": false}`, filename, mode),
 		"Content-Type":    "application/octet-stream",
 	}
-	fmt.Println("headers", headers)
-
-	if _, _, err := httpRequest(http.MethodPost, url, f, headers, nil); err != nil {
-		return err
-	}
-
-	return nil
+	req := r.request(http.MethodPost, url).WithHeaders(headers).WithBody(f)
+	return unmarshalResponse(typ, req, nil)
 }
 
 type uploadSession struct {
 	sessionID string
 	offset    int
 	token     string
+	dropbox   *impl
 }
 
-func (r *impl) startSession(f io.Reader, length int) (session *uploadSession, err *Error) {
+func (r *impl) startSession(f io.Reader, length int) (*uploadSession, error) {
 	url := "https://content.dropboxapi.com/2/files/upload_session/start"
-
+	typ := "upload_file_start"
 	headers := map[string]string{
-		"Authorization":   "Bearer " + r.token,
 		"Dropbox-API-Arg": `{"close":false}`,
 		"Content-Type":    "application/octet-stream",
 	}
-
-	_, bs, err := httpRequest(http.MethodPost, url, f, headers, nil)
-	if err != nil {
-		return nil, NewError("upload_file_start", err.Message)
-	}
-
-	m, err := makeDropboxError(bs, "upload_file_start")
-	if err != nil {
+	req := r.request(http.MethodPost, url).WithHeaders(headers).WithBody(f)
+	resp := make(map[string]interface{})
+	if err := unmarshalResponse(typ, req, &resp); err != nil {
 		return nil, err
 	}
 
-	return &uploadSession{sessionID: m["session_id"].(string), offset: length, token: r.token}, nil
+	return &uploadSession{sessionID: resp["session_id"].(string), offset: length, token: r.token, dropbox: r}, nil
 }
 
-func (s *uploadSession) appendSession(f io.Reader, length int) (err *Error) {
+func (s *uploadSession) appendSession(f io.Reader, length int) error {
 	url := "https://content.dropboxapi.com/2/files/upload_session/append_v2"
-
+	typ := "upload_file_append"
 	headers := map[string]string{
-		"Authorization":   "Bearer " + s.token,
 		"Dropbox-API-Arg": fmt.Sprintf(`{"cursor":{"session_id":%+q,"offset":%d},"close":false}`, s.sessionID, s.offset),
 		"Content-Type":    "application/octet-stream",
 	}
-
-	_, bs, err := httpRequest(http.MethodPost, url, f, headers, nil)
-	if err != nil {
-		return NewError("upload_file_append", err.Message)
-	}
-
-	_, err = makeDropboxError(bs, "upload_file_append")
-	if err != nil {
+	req := s.dropbox.request(http.MethodPost, url).WithHeaders(headers).WithBody(f)
+	resp := make(map[string]interface{})
+	if err := unmarshalResponse(typ, req, &resp); err != nil {
 		return err
 	}
+
 	s.offset += length
 	return nil
 }
 
-func (s *uploadSession) finishSession(filename string, overwrite bool) (err *Error) {
+func (s *uploadSession) finishSession(filename string, overwrite bool) error {
 	url := "https://content.dropboxapi.com/2/files/upload_session/finish"
-
-	mode := ""
-	if overwrite {
-		mode = "overwrite"
-	} else {
-		mode = "add"
+	typ := "upload_file_finish"
+	headers := map[string]string{}
+	{
+		mode := ""
+		if overwrite {
+			mode = "overwrite"
+		} else {
+			mode = "add"
+		}
+		headers = map[string]string{
+			"Dropbox-API-Arg": fmt.Sprintf(`{"cursor":{"session_id":%+q,"offset":%d},"commit":{"path":%+q,"mode":%+q,"autorename":true,"mute":false,"strict_conflict":false}}`, s.sessionID, s.offset, filename, mode),
+			"Content-Type":    "application/octet-stream",
+		}
 	}
-	headers := map[string]string{
-		"Authorization":   "Bearer " + s.token,
-		"Dropbox-API-Arg": fmt.Sprintf(`{"cursor":{"session_id":%+q,"offset":%d},"commit":{"path":%+q,"mode":%+q,"autorename":true,"mute":false,"strict_conflict":false}}`, s.sessionID, s.offset, filename, mode),
-		"Content-Type":    "application/octet-stream",
+	req := s.dropbox.request(http.MethodPost, url).WithHeaders(headers)
+	resp := make(map[string]interface{})
+
+	if err := unmarshalResponse(typ, req, &resp); err != nil {
+		return err
 	}
 
-	_, bs, err := httpRequest(http.MethodPost, url, nil, headers, nil)
-	if err != nil {
-		return NewError("upload_file_finish", err.Message)
-	}
-
-	_, err = makeDropboxError(bs, "upload_file_finish")
-	return err
+	return nil
 }

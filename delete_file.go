@@ -1,7 +1,6 @@
 package dropbox
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -10,29 +9,15 @@ import (
 func (r *impl) DeleteFile(filename string) (*Metadata, error) {
 	url := "https://api.dropboxapi.com/2/files/delete_v2"
 	typ := "delete_file"
-
-	headers := map[string]string{
-		"Authorization": "Bearer " + r.token,
-		"Content-Type":  "application/json",
-	}
-	f := strings.NewReader(fmt.Sprintf(`{"path":%+q}`, filename))
-	_, bs, err := httpRequest(http.MethodPost, url, f, headers, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err = makeDropboxError(bs, "file_delete"); err != nil {
-		if strings.Contains(err.Error(), "not_found") {
-			return nil, ErrNotFound
-		}
-		return nil, err
-	}
-	var res struct {
+	body := strings.NewReader(fmt.Sprintf(`{"path":%+q}`, filename))
+	req := r.request(http.MethodPost, url).WithHeader("Content-Type", "application/json").WithBody(body)
+	var resp struct {
 		Metadata *Metadata `json:"metadata"`
 	}
-	if err := json.Unmarshal(bs, &res); err != nil {
-		return nil, NewError(typ, string(bs))
+
+	if err := unmarshalResponse(typ, req, &resp); err != nil {
+		return nil, err
 	}
 
-	return res.Metadata, nil
+	return resp.Metadata, nil
 }

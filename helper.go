@@ -3,54 +3,8 @@ package dropbox
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"runtime"
-	"runtime/debug"
 	"strings"
 )
-
-func httpRequest(method, url string, body io.Reader, headers map[string]string, res interface{}) (*http.Response, []byte, *Error) {
-	req, err := http.NewRequest(method, url, body)
-	if err != nil {
-		return nil, nil, NewError("request", fmt.Sprintf("%s; method=%s, url=%s", err, method, url))
-	}
-
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, nil, NewError("request", err.Error())
-	}
-	defer resp.Body.Close()
-
-	bs, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, nil, NewError("request", err.Error())
-	}
-
-	if res != nil {
-		if err = json.Unmarshal(bs, res); err != nil {
-			return nil, bs, NewError("request", err.Error())
-		}
-	}
-	fmt.Println("httpRequest.url", url)
-	fmt.Println("httpRequest.headers", headers)
-	fmt.Println("httpRequest.res", string(bs))
-
-	return resp, bs, nil
-}
-
-func printTrace() {
-	if err := recover(); err != nil {
-		pc, _, _, _ := runtime.Caller(3)
-		f := runtime.FuncForPC(pc)
-		fmt.Printf("functipn=%v\npanic:%v\nstack info:%v", f.Name(), err, string(debug.Stack()))
-	}
-}
 
 func makeOnlyOnePreSlash(path string) string {
 	for strings.HasPrefix(path, "/") {
@@ -62,7 +16,7 @@ func makeOnlyOnePreSlash(path string) string {
 // null
 // {"error_summary": "incorrect_offset/", "error": {".tag": "incorrect_offset", "correct_offset": 0}}
 // {"error_summary": "lookup_failed/incorrect_offset/", "error": {".tag": "lookup_failed", "lookup_failed": {".tag": "incorrect_offset", "correct_offset": 1252}}}
-func makeDropboxError(bs []byte, typ string) (map[string]interface{}, *Error) {
+func makeDropboxError(bs []byte, typ string) (map[string]interface{}, error) {
 	if string(bs) == "null" {
 		return nil, nil
 	}

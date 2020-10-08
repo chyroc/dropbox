@@ -69,8 +69,10 @@ func unmarshalBytes(typ string, httpStatusCode int, bs []byte, resp interface{})
 		return err
 	}
 
-	if err := json.Unmarshal(bs, resp); err != nil {
-		return NewError(typ, err.Error())
+	if resp != nil {
+		if err := json.Unmarshal(bs, resp); err != nil {
+			return WrapError(typ, err)
+		}
 	}
 
 	return nil
@@ -79,12 +81,12 @@ func unmarshalBytes(typ string, httpStatusCode int, bs []byte, resp interface{})
 func unmarshalResponse(typ string, request *gorequests.Request, resp interface{}) error {
 	bs, err := request.Bytes()
 	if err != nil {
-		return err
+		return WrapError(typ, err)
 	}
 
 	code, err := request.ResponseStatus()
 	if err != nil {
-		return err
+		return WrapError(typ, err)
 	}
 
 	return unmarshalBytes(typ, code, bs, resp)
