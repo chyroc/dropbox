@@ -22,7 +22,7 @@ func (r *impl) DownloadZip(filename string) (*Metadata, []byte, error) {
 		return nil, nil, err
 	}
 	if headers["Content-Type"] == "application/octet-stream" {
-		var res = new(Metadata)
+		res := new(Metadata)
 		if err := json.Unmarshal([]byte(headers["dropbox-api-result"]), res); err != nil {
 			return nil, nil, NewError(typ, string(bs))
 		}

@@ -26,7 +26,7 @@ func (r *impl) GetFile(filename string) (*Metadata, []byte, error) {
 		return nil, nil, err
 	}
 	if headers["Content-Type"] == "application/octet-stream" {
-		var res = new(Metadata)
+		res := new(Metadata)
 		if err := json.Unmarshal([]byte(headers["Dropbox-Api-Result"]), res); err != nil {
 			return nil, nil, NewError(typ, string(bs))
 		}
@@ -95,7 +95,7 @@ func (r *impl) DownloadFile(filename, dist string) (*Metadata, error) {
 
 func moveFile(source, dist string) error {
 	distDir := dist[:strings.LastIndex(dist, "/")]
-	err := os.MkdirAll(distDir, 0777)
+	err := os.MkdirAll(distDir, 0o777)
 	if err != nil {
 		return err
 	}

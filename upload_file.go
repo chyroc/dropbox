@@ -13,7 +13,7 @@ func (r *impl) UploadFile(filename string, f io.Reader, overwrite bool) error {
 
 	filename = makeOnlyOnePreSlash(filename)
 
-	var buf = make([]byte, MaxSingleUploadFileSize) // 150M
+	buf := make([]byte, MaxSingleUploadFileSize) // 150M
 	readLen, err2 := f.Read(buf)
 	if err2 != nil && err2 != io.EOF {
 		return NewError("upload_file", err2.Error())

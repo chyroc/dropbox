@@ -21,7 +21,7 @@ func makeDropboxError(bs []byte, typ string) (map[string]interface{}, error) {
 		return nil, nil
 	}
 
-	var m = make(map[string]interface{})
+	m := make(map[string]interface{})
 
 	if err := json.Unmarshal(bs, &m); err != nil {
 		return nil, NewError(typ, string(bs))
@@ -33,7 +33,7 @@ func makeDropboxError(bs []byte, typ string) (map[string]interface{}, error) {
 	var errDetail interface{}
 	var errKey string
 
-	var getErrDetail = func(er map[string]interface{}, key string) string {
+	getErrDetail := func(er map[string]interface{}, key string) string {
 		if _, ok := er[".tag"]; ok {
 			delete(er, ".tag")
 		}
