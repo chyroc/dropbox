@@ -3,8 +3,15 @@ package dropbox
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
+
+func init() {
+	logrus.SetOutput(io.Discard)
+}
 
 func makeOnlyOnePreSlash(path string) string {
 	for strings.HasPrefix(path, "/") {
